@@ -7,7 +7,7 @@ from eth_account.messages import encode_typed_data
 from time import time
 from math import ceil
 from datetime import datetime as dt, timedelta as td
-import bot.constants as CONST
+import constants as CONST
 
 class SDK100x:
     def __init__(self):
