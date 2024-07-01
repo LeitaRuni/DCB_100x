@@ -12,12 +12,12 @@ import constants as CONST
 class SDK100x:
     def __init__(self):
         self.PRICE_DECIMALS = 1e18
-        self.url = "https://api.staging.100x.finance/v1"
+        self.url = "https://api.100x.finance/v1"
         self.domain = {
             "name": "100x",
             "version": "0.0.0",
-            "chainId": 168587773,
-            "verifyingContract": "0x02Ca4fcB63E2D3C89fa20D86ccDcfc540c683545"
+            "chainId": 81457,
+            "verifyingContract": "0x691a5fc3a81a144e36c6C4fBCa1fC82843c80d0d"
         }
         self.private_key = config("PRIVATE_KEY")
         self.account = Account.from_key(self.private_key)
@@ -27,6 +27,10 @@ class SDK100x:
     # POST #
 
     def open_market(self, symbol: str, quantity: int, isBuy: bool):
+        if (isBuy):
+            side = "asks"
+        else:
+            side = "bids"
         message = {
                 "account": self.public_key,
                 "subAccountId": self.sub_account_id,
@@ -35,7 +39,7 @@ class SDK100x:
                 "orderType": CONST.MARKET,
                 "timeInForce": CONST.FOK,
                 "expiration": int((time()+10) * 1000),
-                "price": self.get_order_book(symbol)["asks"][0][0],
+                "price": self.get_order_book(symbol)[side][1][0],
                 "quantity": str(quantity),
                 "nonce": int(time() * 1000)
         }
@@ -152,7 +156,7 @@ class SDK100x:
         signed_message = Account.sign_message(signable_message, self.private_key)
         message["signature"] = to_hex(signed_message.signature)
 
-        return get(url=f"{self.url}/positionRisk", params=message).json()[0]
+        return get(url=f"{self.url}/positionRisk", params=message).json()
     
     def get_market_price(self, symbol: str):
         return float(self.get_product(symbol)["markPrice"])/self.PRICE_DECIMALS
@@ -163,7 +167,9 @@ class SDK100x:
     def get_actual_balance_by_symbol(self, symbol: str):
         balance = self.get_actual_balance()
         price = self.get_market_price(symbol)
-        return int(int(balance/price)*1e18)
+        print(balance)
+        print(price)
+        return int(round(balance/price,2)*1e18)
     
     def get_order_book(self, symbol: str):
         url = f"{self.url}/depth?symbol={symbol}&granularity=10&limit=5"
@@ -172,10 +178,10 @@ class SDK100x:
     # TRIGGER #
 
     def crossover(self, df_1, df_2):
-        return True if df_1[-1]> df_2[-1] and df_1[-2]< df_2[-2] else False 
+        return True if df_1[len(df_1)-1]> df_2[len(df_2)-1] and df_1[len(df_1)-2]< df_2[len(df_2)-2] else False 
 
     def crossunder(self, df_1, df_2):
-        return True if df_1[-1]< df_2[-1] and df_1[-2]> df_2[-2] else False 
+        return True if df_1[len(df_1)-1]< df_2[len(df_2)-1] and df_1[len(df_1)-2]> df_2[len(df_2)-2] else False 
     
     def seconds_until_next_hour(self):
         now = dt.now()
@@ -185,9 +191,27 @@ class SDK100x:
     
 
 if __name__ == "__main__":
-    s = SDK100x()
+    dex = SDK100x()
 
     symbol = "solperp"
 
-    # print(int(s.get_positions(symbol)["quantity"]))
-    print(s.seconds_until_next_hour())
+    # a = dex.get_list_products()
+    # for i in a:
+        # print(i)
+
+    # balance = dex.get_actual_balance_by_symbol(symbol)
+    # amount = int(balance/2)
+    # print(amount/1e18)
+    # print(amount)
+    # dex.open_market(symbol, amount, True)
+
+
+    # positions = dex.get_positions(symbol)
+    # if len(positions) == 0:
+    #     position_size = 0
+    # else:
+    #     position_size = int(positions[0]["quantity"])
+
+    # print(position_size)
+    # print(position_size/1e18)
+    # dex.open_market(symbol, abs(position_size), False)
