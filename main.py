@@ -13,7 +13,7 @@ if __name__ == "__main__":
     while True:
         try:
             print("wait data...")
-            # sleep(60)
+            sleep(60)
             df = dex.get_candlestick_dataframe(symbol=symbol, interval="1h", length=length_dc+length_dc_sma)
 
             hh = df["h"].rolling(window=length_dc_sma, min_periods=1).max()

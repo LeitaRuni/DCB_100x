@@ -193,7 +193,7 @@ class SDK100x:
 if __name__ == "__main__":
     dex = SDK100x()
 
-    symbol = "solperp"
+    symbol = "ethperp"
 
     # a = dex.get_list_products()
     # for i in a:
@@ -206,12 +206,12 @@ if __name__ == "__main__":
     # dex.open_market(symbol, amount, True)
 
 
-    # positions = dex.get_positions(symbol)
-    # if len(positions) == 0:
-    #     position_size = 0
-    # else:
-    #     position_size = int(positions[0]["quantity"])
+    positions = dex.get_positions(symbol)
+    if len(positions) == 0:
+        position_size = 0
+    else:
+        position_size = int(positions[0]["quantity"])
 
-    # print(position_size)
-    # print(position_size/1e18)
-    # dex.open_market(symbol, abs(position_size), False)
+    print(position_size)
+    print(position_size/1e18)
+    dex.open_market(symbol, abs(position_size), False)
