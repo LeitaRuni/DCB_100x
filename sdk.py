@@ -63,6 +63,32 @@ class SDK100x:
 
         print(response.text)
 
+    def close_all_positions(self, symbol: str):
+        message = {
+                "account": self.public_key,
+                "subAccountId": self.sub_account_id,
+                "productId": self.get_product(symbol)["id"],
+        }
+
+        full_message = {
+            "primaryType": "CancelOrders",
+            "types": {
+                "EIP712Domain": CONST.EIP712_TYPES["EIP712Domain"],
+                "CancelOrders": CONST.EIP712_TYPES["CancelOrders"],
+            },
+            "domain": self.domain,
+            "message": message
+        }
+
+        signable_message = encode_typed_data(full_message=full_message)
+        signed_message = Account.sign_message(signable_message, self.private_key)
+
+        message["signature"] = to_hex(signed_message.signature)
+
+        response = post(f"{self.url}/openOrders", json=message)
+
+        print(response.text)
+
     # GET #
 
     def get_list_products(self):
@@ -167,8 +193,6 @@ class SDK100x:
     def get_actual_balance_by_symbol(self, symbol: str):
         balance = self.get_actual_balance()
         price = self.get_market_price(symbol)
-        print(balance)
-        print(price)
         return int(round(balance/price,2)*1e18)
     
     def get_order_book(self, symbol: str):
@@ -189,12 +213,26 @@ class SDK100x:
         delta = next_hour - now
         return int(delta.total_seconds())
     
+    def seconds_until_next_15_min_frame(self):
+        now = dt.now()
+        minutes = now.minute
+        seconds = now.second
+
+        minutes_since_last_frame = minutes % 15
+
+        seconds_since_last_frame = minutes_since_last_frame * 60 + seconds
+        seconds_until_next_frame = 15 * 60 - seconds_since_last_frame
+
+        return seconds_until_next_frame
 
 if __name__ == "__main__":
     dex = SDK100x()
 
     symbol = "ethperp"
 
+    print(dex.get_candlestick_dataframe(symbol, "15m", 10))
+
+    # print(dex.seconds_until_next_15_min_frame())
     # a = dex.get_list_products()
     # for i in a:
         # print(i)
@@ -206,12 +244,12 @@ if __name__ == "__main__":
     # dex.open_market(symbol, amount, True)
 
 
-    positions = dex.get_positions(symbol)
-    if len(positions) == 0:
-        position_size = 0
-    else:
-        position_size = int(positions[0]["quantity"])
+    # positions = dex.get_positions(symbol)
+    # if len(positions) == 0:
+    #     position_size = 0
+    # else:
+    #     position_size = int(positions[0]["quantity"])
 
-    print(position_size)
-    print(position_size/1e18)
-    dex.open_market(symbol, abs(position_size), False)
+    # print(position_size)
+    # print(position_size/1e18)
+    # dex.open_market(symbol, abs(position_size), False)
